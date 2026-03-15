@@ -52,6 +52,13 @@ export default function RootLayout() {
             title: 'Fishing Spot',
           }} 
         />
+        <Stack.Screen 
+          name="trip-planner" 
+          options={{ 
+            title: 'Plan Your Trip',
+            headerShown: false,
+          }} 
+        />
       </Stack>
     </AuthProvider>
   );

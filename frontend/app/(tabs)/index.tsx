@@ -287,6 +287,16 @@ export default function HomeScreen() {
       <View style={styles.actionsGrid}>
         <TouchableOpacity
           style={[styles.actionCard, { backgroundColor: colors.card }]}
+          onPress={() => router.push('/trip-planner')}
+        >
+          <Ionicons name="navigate" size={32} color="#22c55e" />
+          <Text style={[styles.actionText, { color: colors.text }]}>
+            Plan Trip
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionCard, { backgroundColor: colors.card }]}
           onPress={() => router.push('/map')}
         >
           <Ionicons name="map" size={32} color={colors.primary} />
@@ -312,16 +322,6 @@ export default function HomeScreen() {
           <Ionicons name="trophy" size={32} color={colors.warning} />
           <Text style={[styles.actionText, { color: colors.text }]}>
             Log Catch
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionCard, { backgroundColor: colors.card }]}
-          onPress={() => router.push('/profile')}
-        >
-          <Ionicons name="person" size={32} color={colors.primary} />
-          <Text style={[styles.actionText, { color: colors.text }]}>
-            Profile
           </Text>
         </TouchableOpacity>
       </View>
