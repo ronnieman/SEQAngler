@@ -108,7 +108,8 @@ const generateMapHTML = (
   showRamps: boolean,
   showMarkers: boolean,
   showDepth: boolean,
-  showSeaMap: boolean
+  showSeaMap: boolean,
+  showSatellite: boolean
 ) => {
   const spotsMarkersJS = showSpots ? spots.map(spot => `
     L.marker([${spot.latitude}, ${spot.longitude}], {
@@ -228,11 +229,25 @@ const generateMapHTML = (
           zoomControl: true
         }).setView([${userLocation ? userLocation.latitude : MapConfig.defaultRegion.latitude}, ${userLocation ? userLocation.longitude : MapConfig.defaultRegion.longitude}], ${userLocation ? 12 : 10});
         
+        ${showSatellite ? `
+        // Esri World Imagery (Satellite)
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          attribution: '© Esri, Maxar, Earthstar Geographics',
+          maxZoom: 19,
+        }).addTo(map);
+        
+        // Add labels on top of satellite
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19,
+          opacity: 0.8
+        }).addTo(map);
+        ` : `
         // Base layer - OpenStreetMap
         var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap',
           maxZoom: 18,
         }).addTo(map);
+        `}
 
         // OpenSeaMap nautical overlay (crowdsourced)
         ${showSeaMap ? `
@@ -278,6 +293,7 @@ export default function MapScreen() {
   const [showMarkers, setShowMarkers] = useState(true);
   const [showDepth, setShowDepth] = useState(true);
   const [showSeaMap, setShowSeaMap] = useState(true);
+  const [showSatellite, setShowSatellite] = useState(false);
   const [viewMode, setViewMode] = useState<'map' | 'info'>('map');
 
   useEffect(() => {
@@ -351,7 +367,7 @@ export default function MapScreen() {
     );
   }
 
-  const mapHTML = generateMapHTML(spots, ramps, channelMarkers, depthContours, userLocation, showSpots, showRamps, showMarkers, showDepth, showSeaMap);
+  const mapHTML = generateMapHTML(spots, ramps, channelMarkers, depthContours, userLocation, showSpots, showRamps, showMarkers, showDepth, showSeaMap, showSatellite);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -418,6 +434,13 @@ export default function MapScreen() {
         <>
           {/* Filter Pills */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterScrollContent}>
+            <Pressable
+              style={[styles.filterPill, { backgroundColor: showSatellite ? '#7c3aed' : colors.card }]}
+              onPress={() => setShowSatellite(!showSatellite)}
+            >
+              <Text style={styles.filterEmoji}>🛰️</Text>
+              <Text style={[styles.filterPillText, { color: showSatellite ? '#fff' : colors.text }]}>Satellite</Text>
+            </Pressable>
             <Pressable
               style={[styles.filterPill, { backgroundColor: showSeaMap ? '#0891b2' : colors.card }]}
               onPress={() => setShowSeaMap(!showSeaMap)}

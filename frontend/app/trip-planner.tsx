@@ -77,7 +77,8 @@ const generateTripMapHTML = (
   showSpots: boolean,
   showRamps: boolean,
   showGreenZones: boolean,
-  trackingPath: { latitude: number; longitude: number }[]
+  trackingPath: { latitude: number; longitude: number }[],
+  showSatellite: boolean
 ) => {
   // Draw green zones as polygons
   const greenZonesJS = showGreenZones ? greenZones.map(zone => {
@@ -193,11 +194,25 @@ const generateTripMapHTML = (
       <script>
         var map = L.map('map').setView([${centerLat}, ${centerLng}], 11);
         
+        ${showSatellite ? `
+        // Esri World Imagery (Satellite)
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          attribution: '© Esri, Maxar, Earthstar Geographics',
+          maxZoom: 19,
+        }).addTo(map);
+        
+        // Add labels on top of satellite
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+          maxZoom: 19,
+          opacity: 0.8
+        }).addTo(map);
+        ` : `
         // Base layer - OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap',
           maxZoom: 18,
         }).addTo(map);
+        `}
 
         // OpenSeaMap nautical overlay (crowdsourced)
         L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
@@ -243,6 +258,7 @@ export default function TripPlannerScreen() {
   const [showSpots, setShowSpots] = useState(true);
   const [showRamps, setShowRamps] = useState(true);
   const [showGreenZones, setShowGreenZones] = useState(true);
+  const [showSatellite, setShowSatellite] = useState(false);
 
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
 
@@ -429,7 +445,7 @@ export default function TripPlannerScreen() {
     );
   }
 
-  const mapHTML = generateTripMapHTML(waypoints, spots, ramps, greenZones, userLocation, showSpots, showRamps, showGreenZones, trackingPath);
+  const mapHTML = generateTripMapHTML(waypoints, spots, ramps, greenZones, userLocation, showSpots, showRamps, showGreenZones, trackingPath, showSatellite);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -485,6 +501,13 @@ export default function TripPlannerScreen() {
 
       {/* Filter Pills */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+        <Pressable
+          style={[styles.filterPill, { backgroundColor: showSatellite ? '#059669' : colors.card }]}
+          onPress={() => setShowSatellite(!showSatellite)}
+        >
+          <Text style={styles.filterEmoji}>🛰️</Text>
+          <Text style={[styles.filterText, { color: showSatellite ? '#fff' : colors.text }]}>Satellite</Text>
+        </Pressable>
         <Pressable
           style={[styles.filterPill, { backgroundColor: showGreenZones ? '#dc2626' : colors.card }]}
           onPress={() => setShowGreenZones(!showGreenZones)}
