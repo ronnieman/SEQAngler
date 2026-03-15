@@ -1,22 +1,35 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "SEQ Angler",
+    "slug": "seq-angler",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "frontend",
+    "scheme": "seqangler",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.seqangler.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Show nearby fishing spots",
+        "NSCameraUsageDescription": "Take photos of your catches",
+        "NSPhotoLibraryUsageDescription": "Upload catch photos"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000"
+        "backgroundColor": "#0ea5e9"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.seqangler.app",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -31,7 +44,25 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#000"
+          "backgroundColor": "#0ea5e9"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Show nearby fishing spots"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Upload catch photos"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Take photos of your catches"
         }
       ]
     ],
