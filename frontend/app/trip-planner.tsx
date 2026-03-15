@@ -193,9 +193,17 @@ const generateTripMapHTML = (
       <script>
         var map = L.map('map').setView([${centerLat}, ${centerLng}], 11);
         
+        // Base layer - OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap',
           maxZoom: 18,
+        }).addTo(map);
+
+        // OpenSeaMap nautical overlay (crowdsourced)
+        L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+          attribution: '© <a href="http://www.openseamap.org">OpenSeaMap</a>',
+          maxZoom: 18,
+          opacity: 1
         }).addTo(map);
 
         ${greenZonesJS}

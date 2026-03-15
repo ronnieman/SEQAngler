@@ -107,7 +107,8 @@ const generateMapHTML = (
   showSpots: boolean,
   showRamps: boolean,
   showMarkers: boolean,
-  showDepth: boolean
+  showDepth: boolean,
+  showSeaMap: boolean
 ) => {
   const spotsMarkersJS = showSpots ? spots.map(spot => `
     L.marker([${spot.latitude}, ${spot.longitude}], {
@@ -227,10 +228,20 @@ const generateMapHTML = (
           zoomControl: true
         }).setView([${userLocation ? userLocation.latitude : MapConfig.defaultRegion.latitude}, ${userLocation ? userLocation.longitude : MapConfig.defaultRegion.longitude}], ${userLocation ? 12 : 10});
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // Base layer - OpenStreetMap
+        var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap',
           maxZoom: 18,
         }).addTo(map);
+
+        // OpenSeaMap nautical overlay (crowdsourced)
+        ${showSeaMap ? `
+        var seamarkLayer = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+          attribution: '© <a href="http://www.openseamap.org">OpenSeaMap</a> contributors',
+          maxZoom: 18,
+          opacity: 1
+        }).addTo(map);
+        ` : ''}
 
         ${depthContoursJS}
         ${depthLabelsJS}
@@ -266,6 +277,7 @@ export default function MapScreen() {
   const [showRamps, setShowRamps] = useState(true);
   const [showMarkers, setShowMarkers] = useState(true);
   const [showDepth, setShowDepth] = useState(true);
+  const [showSeaMap, setShowSeaMap] = useState(true);
   const [viewMode, setViewMode] = useState<'map' | 'info'>('map');
 
   useEffect(() => {
@@ -339,7 +351,7 @@ export default function MapScreen() {
     );
   }
 
-  const mapHTML = generateMapHTML(spots, ramps, channelMarkers, depthContours, userLocation, showSpots, showRamps, showMarkers, showDepth);
+  const mapHTML = generateMapHTML(spots, ramps, channelMarkers, depthContours, userLocation, showSpots, showRamps, showMarkers, showDepth, showSeaMap);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -406,6 +418,13 @@ export default function MapScreen() {
         <>
           {/* Filter Pills */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterScrollContent}>
+            <Pressable
+              style={[styles.filterPill, { backgroundColor: showSeaMap ? '#0891b2' : colors.card }]}
+              onPress={() => setShowSeaMap(!showSeaMap)}
+            >
+              <Text style={styles.filterEmoji}>⛵</Text>
+              <Text style={[styles.filterPillText, { color: showSeaMap ? '#fff' : colors.text }]}>SeaMap</Text>
+            </Pressable>
             <Pressable
               style={[styles.filterPill, { backgroundColor: showSpots ? colors.primary : colors.card }]}
               onPress={() => setShowSpots(!showSpots)}
