@@ -190,21 +190,28 @@ const generateMapHTML = (
   }).join('\n') : '';
 
   const userLocationJS = userLocation ? `
-    var userMarker = L.marker([${userLocation.latitude}, ${userLocation.longitude}], {
-      icon: L.divIcon({
-        className: 'user-marker',
-        html: '<div style="width: 20px; height: 20px; background: #3b82f6; border-radius: 50%; border: 4px solid white; box-shadow: 0 0 0 2px #3b82f6, 0 4px 8px rgba(0,0,0,0.3);"></div>',
-        iconSize: [20, 20],
-        iconAnchor: [10, 10]
-      })
-    }).addTo(map).bindPopup('<b>📍 Your Location</b>');
-    
+    // Pulsing accuracy circle
     L.circle([${userLocation.latitude}, ${userLocation.longitude}], {
       color: '#3b82f6',
       fillColor: '#93c5fd',
-      fillOpacity: 0.2,
-      radius: 500
+      fillOpacity: 0.15,
+      radius: 300,
+      weight: 1
     }).addTo(map);
+    
+    // User location marker with pulsing effect
+    var userMarker = L.marker([${userLocation.latitude}, ${userLocation.longitude}], {
+      icon: L.divIcon({
+        className: 'user-marker',
+        html: '<div style="position:relative;"><div style="position:absolute;top:-15px;left:-15px;width:30px;height:30px;background:rgba(59,130,246,0.3);border-radius:50%;animation:pulse 2s ease-out infinite;"></div><div style="position:absolute;top:-10px;left:-10px;width:20px;height:20px;background:#3b82f6;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4);"></div></div><style>@keyframes pulse{0%{transform:scale(1);opacity:1}100%{transform:scale(2.5);opacity:0}}</style>',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+      }),
+      zIndexOffset: 1000
+    }).addTo(map).bindPopup('<div style="text-align:center"><b style="color:#3b82f6;font-size:14px">📍 You Are Here</b><br><span style="font-size:11px;color:#666">Lat: ${userLocation.latitude.toFixed(5)}<br>Lng: ${userLocation.longitude.toFixed(5)}</span></div>');
+    
+    // Open popup by default
+    userMarker.openPopup();
   ` : '';
 
   return `
@@ -417,15 +424,20 @@ export default function MapScreen() {
           </Pressable>
         </View>
 
-        {/* GPS Button */}
+        {/* GPS Button - My Location */}
         <Pressable
-          style={[styles.gpsButton, { backgroundColor: userLocation ? colors.accent : colors.background }]}
+          style={[styles.gpsButton, { backgroundColor: userLocation ? '#22c55e' : colors.card, borderWidth: 2, borderColor: userLocation ? '#16a34a' : colors.border }]}
           onPress={getCurrentLocation}
         >
           {gpsLoading ? (
             <ActivityIndicator size="small" color={userLocation ? '#fff' : colors.primary} />
           ) : (
-            <Ionicons name="locate" size={18} color={userLocation ? '#fff' : colors.primary} />
+            <>
+              <Ionicons name={userLocation ? "navigate" : "locate-outline"} size={18} color={userLocation ? '#fff' : colors.primary} />
+              <Text style={[styles.gpsButtonText, { color: userLocation ? '#fff' : colors.primary }]}>
+                {userLocation ? 'Located' : 'My Location'}
+              </Text>
+            </>
           )}
         </Pressable>
       </View>
@@ -663,11 +675,17 @@ const styles = StyleSheet.create({
   },
   viewToggleText: { fontSize: 13, fontWeight: '600' },
   gpsButton: {
-    width: 40,
-    height: 40,
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
+  },
+  gpsButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   
   // Filters
