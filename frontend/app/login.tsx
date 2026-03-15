@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   useColorScheme,
   KeyboardAvoidingView,
   Platform,
@@ -26,22 +26,33 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleLogin = async () => {
+    console.log('Login button pressed');
+    setError('');
+    
     if (!email || !password) {
-      Alert.alert('Missing Info', 'Please enter email and password');
+      setError('Please enter email and password');
+      if (Platform.OS !== 'web') {
+        Alert.alert('Missing Info', 'Please enter email and password');
+      }
       return;
     }
 
     setLoading(true);
     try {
+      console.log('Attempting login...');
       await login(email, password);
+      console.log('Login successful, navigating...');
       router.replace('/(tabs)');
-    } catch (error: any) {
-      Alert.alert(
-        'Login Failed',
-        error.response?.data?.detail || 'Invalid email or password'
-      );
+    } catch (err: any) {
+      console.log('Login error:', err);
+      const message = err.response?.data?.detail || 'Invalid email or password';
+      setError(message);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Login Failed', message);
+      }
     } finally {
       setLoading(false);
     }
@@ -61,6 +72,13 @@ export default function LoginScreen() {
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Sign in to continue fishing
         </Text>
+
+        {/* Error Message */}
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
 
         {/* Email Input */}
         <View style={[styles.inputContainer, { backgroundColor: colors.card }]}>
@@ -89,20 +107,23 @@ export default function LoginScreen() {
             secureTextEntry={!showPassword}
             autoCapitalize="none"
           />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+          <Pressable onPress={() => setShowPassword(!showPassword)}>
             <Ionicons
               name={showPassword ? 'eye-off' : 'eye'}
               size={20}
               color={colors.textSecondary}
             />
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* Login Button */}
-        <TouchableOpacity
-          style={[
+        <Pressable
+          style={({ pressed }) => [
             styles.loginButton,
-            { backgroundColor: loading ? colors.textSecondary : colors.primary },
+            { 
+              backgroundColor: loading ? colors.textSecondary : colors.primary,
+              opacity: pressed ? 0.8 : 1,
+            },
           ]}
           onPress={handleLogin}
           disabled={loading}
@@ -112,18 +133,18 @@ export default function LoginScreen() {
           ) : (
             <Text style={styles.loginButtonText}>Sign In</Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
 
         {/* Register Link */}
         <View style={styles.registerRow}>
           <Text style={[styles.registerText, { color: colors.textSecondary }]}>
             Don't have an account?
           </Text>
-          <TouchableOpacity onPress={() => router.replace('/register')}>
+          <Pressable onPress={() => router.replace('/register')}>
             <Text style={[styles.registerLink, { color: colors.primary }]}>
               {' '}Sign Up
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -158,6 +179,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 32,
+  },
+  errorContainer: {
+    backgroundColor: '#fef2f2',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: '#dc2626',
+    textAlign: 'center',
+    fontSize: 14,
   },
   inputContainer: {
     flexDirection: 'row',

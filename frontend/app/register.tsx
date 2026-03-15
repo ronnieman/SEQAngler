@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   useColorScheme,
   KeyboardAvoidingView,
   Platform,
@@ -29,36 +29,57 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleRegister = async () => {
+    console.log('Register button pressed');
+    setError('');
+    setSuccess('');
+
     if (!name || !email || !password) {
-      Alert.alert('Missing Info', 'Please fill in all fields');
+      setError('Please fill in all fields');
+      if (Platform.OS !== 'web') {
+        Alert.alert('Missing Info', 'Please fill in all fields');
+      }
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Password Mismatch', 'Passwords do not match');
+      setError('Passwords do not match');
+      if (Platform.OS !== 'web') {
+        Alert.alert('Password Mismatch', 'Passwords do not match');
+      }
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Weak Password', 'Password must be at least 6 characters');
+      setError('Password must be at least 6 characters');
+      if (Platform.OS !== 'web') {
+        Alert.alert('Weak Password', 'Password must be at least 6 characters');
+      }
       return;
     }
 
     setLoading(true);
     try {
+      console.log('Attempting registration...');
       await register(name, email, password);
-      Alert.alert(
-        'Welcome!',
-        'Your account has been created with a 30-day free trial.',
-        [{ text: 'Let\'s Go!', onPress: () => router.replace('/(tabs)') }]
-      );
-    } catch (error: any) {
-      Alert.alert(
-        'Registration Failed',
-        error.response?.data?.detail || 'Unable to create account'
-      );
+      console.log('Registration successful!');
+      setSuccess('Account created successfully! Redirecting...');
+      
+      // Navigate after showing success
+      setTimeout(() => {
+        router.replace('/(tabs)');
+      }, 1500);
+      
+    } catch (err: any) {
+      console.log('Registration error:', err);
+      const message = err.response?.data?.detail || 'Unable to create account';
+      setError(message);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Registration Failed', message);
+      }
     } finally {
       setLoading(false);
     }
@@ -87,6 +108,20 @@ export default function RegisterScreen() {
               Free 30-day trial - No credit card required
             </Text>
           </View>
+
+          {/* Error Message */}
+          {error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
+
+          {/* Success Message */}
+          {success ? (
+            <View style={styles.successContainer}>
+              <Text style={styles.successText}>{success}</Text>
+            </View>
+          ) : null}
 
           {/* Name Input */}
           <View style={[styles.inputContainer, { backgroundColor: colors.card }]}>
@@ -128,13 +163,13 @@ export default function RegisterScreen() {
               secureTextEntry={!showPassword}
               autoCapitalize="none"
             />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Pressable onPress={() => setShowPassword(!showPassword)}>
               <Ionicons
                 name={showPassword ? 'eye-off' : 'eye'}
                 size={20}
                 color={colors.textSecondary}
               />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           {/* Confirm Password Input */}
@@ -152,10 +187,13 @@ export default function RegisterScreen() {
           </View>
 
           {/* Register Button */}
-          <TouchableOpacity
-            style={[
+          <Pressable
+            style={({ pressed }) => [
               styles.registerButton,
-              { backgroundColor: loading ? colors.textSecondary : colors.primary },
+              { 
+                backgroundColor: loading ? colors.textSecondary : colors.primary,
+                opacity: pressed ? 0.8 : 1,
+              },
             ]}
             onPress={handleRegister}
             disabled={loading}
@@ -165,18 +203,18 @@ export default function RegisterScreen() {
             ) : (
               <Text style={styles.registerButtonText}>Create Account</Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
 
           {/* Login Link */}
           <View style={styles.loginRow}>
             <Text style={[styles.loginText, { color: colors.textSecondary }]}>
               Already have an account?
             </Text>
-            <TouchableOpacity onPress={() => router.replace('/login')}>
+            <Pressable onPress={() => router.replace('/login')}>
               <Text style={[styles.loginLink, { color: colors.primary }]}>
                 {' '}Sign In
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </ScrollView>
@@ -222,13 +260,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 12,
     borderRadius: 8,
-    marginBottom: 24,
+    marginBottom: 16,
     gap: 8,
   },
   trialText: {
     color: '#15803d',
     fontSize: 14,
     fontWeight: '500',
+  },
+  errorContainer: {
+    backgroundColor: '#fef2f2',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: '#dc2626',
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  successContainer: {
+    backgroundColor: '#dcfce7',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  successText: {
+    color: '#15803d',
+    textAlign: 'center',
+    fontSize: 14,
   },
   inputContainer: {
     flexDirection: 'row',
