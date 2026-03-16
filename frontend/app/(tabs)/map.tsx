@@ -307,12 +307,13 @@ const generateMapHTML = (
         }).addTo(map);
         ` : ''}
 
-        // Weather Radar overlay from RainViewer
-        ${showRadar && radarTimestamp > 0 ? `
-        var radarLayer = L.tileLayer('https://tilecache.rainviewer.com/v2/radar/${radarTimestamp}/256/{z}/{x}/{y}/4/1_1.png', {
-          attribution: '© <a href="https://www.rainviewer.com">RainViewer</a>',
-          maxZoom: 18,
-          opacity: 0.7,
+        // Weather Radar overlay using Open-Meteo
+        ${showRadar ? `
+        // Using Open-Meteo precipitation overlay (global coverage, all zoom levels)
+        var radarLayer = L.tileLayer('https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=9de243494c0b295cca9337e1e96b00e2', {
+          attribution: '© OpenWeatherMap',
+          maxZoom: 19,
+          opacity: 0.6,
           zIndex: 100
         }).addTo(map);
         
@@ -321,9 +322,9 @@ const generateMapHTML = (
         radarLegend.onAdd = function(map) {
           var div = L.DomUtil.create('div', 'radar-legend');
           div.innerHTML = '<div style="background:rgba(255,255,255,0.9);padding:6px 10px;border-radius:6px;font-size:10px;box-shadow:0 2px 6px rgba(0,0,0,0.2);">' +
-            '<div style="font-weight:bold;margin-bottom:4px;">🌧️ Rain Intensity</div>' +
+            '<div style="font-weight:bold;margin-bottom:4px;">🌧️ Precipitation</div>' +
             '<div style="display:flex;gap:3px;align-items:center;">' +
-            '<span style="background:#00ff00;width:12px;height:12px;border-radius:2px;"></span><span>Light</span>' +
+            '<span style="background:#a0f0a0;width:12px;height:12px;border-radius:2px;"></span><span>Light</span>' +
             '<span style="background:#ffff00;width:12px;height:12px;border-radius:2px;margin-left:4px;"></span><span>Moderate</span>' +
             '<span style="background:#ff0000;width:12px;height:12px;border-radius:2px;margin-left:4px;"></span><span>Heavy</span>' +
             '</div></div>';
