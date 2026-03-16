@@ -51,6 +51,35 @@ interface ClosedSeasons {
   species: string[];
 }
 
+interface DailyForecast {
+  date: string;
+  day_name: string;
+  temp_max: number;
+  temp_min: number;
+  conditions: string;
+  weather_icon: string;
+  wind_speed: number;
+  wind_direction: string;
+  precipitation_chance: number;
+  fishing_rating: string;
+}
+
+interface TideEvent {
+  time: string;
+  height: number;
+  type: string;
+}
+
+interface DailyTides {
+  date: string;
+  day_name: string;
+  tides: TideEvent[];
+  sunrise: string;
+  sunset: string;
+  moon_phase: string;
+  fishing_rating: string;
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
@@ -61,6 +90,8 @@ export default function HomeScreen() {
   const [marineWeather, setMarineWeather] = useState<MarineWeather | null>(null);
   const [fishingScore, setFishingScore] = useState<FishingScore | null>(null);
   const [closedSeasons, setClosedSeasons] = useState<ClosedSeasons | null>(null);
+  const [forecast7Day, setForecast7Day] = useState<DailyForecast[]>([]);
+  const [tides7Day, setTides7Day] = useState<DailyTides[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -69,16 +100,20 @@ export default function HomeScreen() {
 
   const fetchData = async () => {
     try {
-      const [weatherRes, marineRes, scoreRes, closedRes] = await Promise.all([
+      const [weatherRes, marineRes, scoreRes, closedRes, forecastRes, tidesRes] = await Promise.all([
         axios.get(`${API_URL}/weather`),
         axios.get(`${API_URL}/marine-weather`),
         axios.get(`${API_URL}/fishing-conditions/preview`),
         axios.get(`${API_URL}/species/closed-seasons`),
+        axios.get(`${API_URL}/forecast/7day`),
+        axios.get(`${API_URL}/tides/7day`),
       ]);
       setWeather(weatherRes.data);
       setMarineWeather(marineRes.data);
       setFishingScore(scoreRes.data);
       setClosedSeasons(closedRes.data);
+      setForecast7Day(forecastRes.data.days || []);
+      setTides7Day(tidesRes.data.days || []);
     } catch (error) {
       console.log('Error fetching data:', error);
     }
@@ -280,6 +315,92 @@ export default function HomeScreen() {
               {closedSeasons.count} species currently closed
             </Text>
           </View>
+        </View>
+      )}
+
+      {/* 7-Day Weather Forecast */}
+      {forecast7Day.length > 0 && (
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="calendar" size={24} color="#3b82f6" />
+            <Text style={[styles.cardTitle, { color: colors.text }]}>7-Day Forecast</Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.forecastRow}>
+              {forecast7Day.map((day, index) => (
+                <View key={day.date} style={[styles.forecastDay, index === 0 && { backgroundColor: colors.primary + '20' }]}>
+                  <Text style={[styles.forecastDayName, { color: colors.text, fontWeight: index === 0 ? '700' : '600' }]}>
+                    {index === 0 ? 'Today' : day.day_name}
+                  </Text>
+                  <Text style={styles.forecastIcon}>{day.weather_icon}</Text>
+                  <Text style={[styles.forecastTemp, { color: colors.text }]}>
+                    {Math.round(day.temp_max)}°
+                  </Text>
+                  <Text style={[styles.forecastTempMin, { color: colors.subtext }]}>
+                    {Math.round(day.temp_min)}°
+                  </Text>
+                  <View style={styles.forecastWind}>
+                    <Ionicons name="navigate" size={12} color={colors.subtext} />
+                    <Text style={[styles.forecastWindText, { color: colors.subtext }]}>
+                      {day.wind_speed}
+                    </Text>
+                  </View>
+                  <View style={[styles.fishingBadge, { 
+                    backgroundColor: day.fishing_rating === 'Excellent' ? '#22c55e' : 
+                                    day.fishing_rating === 'Good' ? '#3b82f6' : 
+                                    day.fishing_rating === 'Fair' ? '#f59e0b' : '#ef4444' 
+                  }]}>
+                    <Text style={styles.fishingBadgeText}>
+                      {day.fishing_rating === 'Excellent' ? '🎣' : day.fishing_rating === 'Good' ? '✓' : '~'}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+      )}
+
+      {/* 7-Day Tide Times */}
+      {tides7Day.length > 0 && (
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="water" size={24} color="#0891b2" />
+            <Text style={[styles.cardTitle, { color: colors.text }]}>7-Day Tides</Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.tidesRow}>
+              {tides7Day.map((day, index) => (
+                <View key={day.date} style={[styles.tideDay, index === 0 && { backgroundColor: '#0891b2' + '20' }]}>
+                  <Text style={[styles.tideDayName, { color: colors.text, fontWeight: index === 0 ? '700' : '600' }]}>
+                    {index === 0 ? 'Today' : day.day_name}
+                  </Text>
+                  <Text style={[styles.moonPhaseSmall, { color: colors.subtext }]}>
+                    {day.moon_phase}
+                  </Text>
+                  {day.tides.slice(0, 4).map((tide, tideIndex) => (
+                    <View key={tideIndex} style={styles.tideEvent}>
+                      <Text style={[styles.tideType, { 
+                        color: tide.type === 'high' ? '#0891b2' : '#64748b' 
+                      }]}>
+                        {tide.type === 'high' ? '▲' : '▼'}
+                      </Text>
+                      <Text style={[styles.tideTime, { color: colors.text }]}>
+                        {tide.time}
+                      </Text>
+                      <Text style={[styles.tideHeight, { color: colors.subtext }]}>
+                        {tide.height}m
+                      </Text>
+                    </View>
+                  ))}
+                  <View style={styles.sunTimes}>
+                    <Text style={[styles.sunTime, { color: '#f59e0b' }]}>☀️ {day.sunrise}</Text>
+                    <Text style={[styles.sunTime, { color: '#6366f1' }]}>🌙 {day.sunset}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </ScrollView>
         </View>
       )}
 
@@ -552,5 +673,104 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 13,
     fontWeight: '500',
+  },
+  // 7-Day Forecast Styles
+  forecastRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingRight: 16,
+  },
+  forecastDay: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    minWidth: 72,
+  },
+  forecastDayName: {
+    fontSize: 13,
+    marginBottom: 6,
+  },
+  forecastIcon: {
+    fontSize: 28,
+    marginVertical: 4,
+  },
+  forecastTemp: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  forecastTempMin: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  forecastWind: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 6,
+  },
+  forecastWindText: {
+    fontSize: 11,
+  },
+  fishingBadge: {
+    marginTop: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fishingBadgeText: {
+    fontSize: 12,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  // 7-Day Tides Styles
+  tidesRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingRight: 16,
+  },
+  tideDay: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    minWidth: 85,
+  },
+  tideDayName: {
+    fontSize: 13,
+    marginBottom: 4,
+  },
+  moonPhaseSmall: {
+    fontSize: 11,
+    marginBottom: 6,
+  },
+  tideEvent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 3,
+  },
+  tideType: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  tideTime: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  tideHeight: {
+    fontSize: 10,
+  },
+  sunTimes: {
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.1)',
+  },
+  sunTime: {
+    fontSize: 10,
+    textAlign: 'center',
   },
 });
