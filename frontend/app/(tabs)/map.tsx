@@ -120,6 +120,7 @@ const generateMapHTML = (
   depthContours: DepthContour[],
   reefs: Reef[],
   userLocation: { latitude: number; longitude: number } | null,
+  tidalFlow: TidalFlow | null,
   showSpots: boolean,
   showRamps: boolean,
   showMarkers: boolean,
@@ -128,7 +129,8 @@ const generateMapHTML = (
   showSatellite: boolean,
   showReefs: boolean,
   showRadar: boolean,
-  radarTimestamp: number
+  radarTimestamp: number,
+  showCurrents: boolean
 ) => {
   const spotsMarkersJS = showSpots ? spots.map(spot => `
     L.marker([${spot.latitude}, ${spot.longitude}], {
@@ -330,6 +332,61 @@ const generateMapHTML = (
         radarLegend.addTo(map);
         ` : ''}
 
+        // Tidal Current visualization
+        ${showCurrents && tidalFlow ? `
+        // Get direction angle from compass direction
+        function getDirectionAngle(dir) {
+          const directions = { 'N': 0, 'NNE': 22.5, 'NE': 45, 'ENE': 67.5, 'E': 90, 'ESE': 112.5, 'SE': 135, 'SSE': 157.5, 'S': 180, 'SSW': 202.5, 'SW': 225, 'WSW': 247.5, 'W': 270, 'WNW': 292.5, 'NW': 315, 'NNW': 337.5 };
+          return directions[dir] || 0;
+        }
+        
+        var flowAngle = getDirectionAngle('${tidalFlow.current_direction}');
+        var flowSpeed = ${tidalFlow.current_speed};
+        var flowState = '${tidalFlow.flow_state}';
+        
+        // Add current flow arrows at key locations in Moreton Bay
+        var currentLocations = [
+          [-27.35, 153.20], // Central Moreton Bay
+          [-27.25, 153.25], // North Bay
+          [-27.45, 153.25], // South Bay
+          [-27.30, 153.40], // East near Moreton Island
+          [-27.50, 153.35], // Near Straddie
+        ];
+        
+        var flowColor = flowState === 'Slack' ? '#94a3b8' : flowState.includes('Rising') ? '#22c55e' : '#f97316';
+        var arrowSize = flowSpeed < 0.5 ? 30 : flowSpeed < 1 ? 40 : 50;
+        
+        currentLocations.forEach(function(loc) {
+          L.marker(loc, {
+            icon: L.divIcon({
+              className: 'current-arrow',
+              html: '<div style="transform: rotate(' + flowAngle + 'deg); width: ' + arrowSize + 'px; height: ' + arrowSize + 'px; display: flex; align-items: center; justify-content: center;">' +
+                '<svg viewBox="0 0 24 24" width="' + arrowSize + '" height="' + arrowSize + '" fill="' + flowColor + '" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));">' +
+                '<path d="M12 2L4 14h6v8h4v-8h6L12 2z"/>' +
+                '</svg></div>',
+              iconSize: [arrowSize, arrowSize],
+              iconAnchor: [arrowSize/2, arrowSize/2]
+            }),
+            interactive: false,
+            zIndexOffset: -100
+          }).addTo(map);
+        });
+        
+        // Current info control
+        var currentControl = L.control({position: 'topright'});
+        currentControl.onAdd = function(map) {
+          var div = L.DomUtil.create('div', 'current-info');
+          div.innerHTML = '<div style="background:rgba(255,255,255,0.95);padding:8px 12px;border-radius:8px;font-size:11px;box-shadow:0 2px 8px rgba(0,0,0,0.2);min-width:120px;">' +
+            '<div style="font-weight:bold;color:#0891b2;margin-bottom:4px;">🌊 Tidal Current</div>' +
+            '<div style="color:#334155"><b>' + flowState + '</b></div>' +
+            '<div style="color:#64748b">' + flowSpeed + ' kn ${tidalFlow.current_direction}</div>' +
+            '<div style="color:#64748b;font-size:10px;margin-top:2px;">Water: ${tidalFlow.water_temp}°C</div>' +
+            '</div>';
+          return div;
+        };
+        currentControl.addTo(map);
+        ` : ''}
+
         ${depthContoursJS}
         ${depthLabelsJS}
         ${reefsMarkersJS}
@@ -370,6 +427,7 @@ export default function MapScreen() {
   const [showReefs, setShowReefs] = useState(true);
   const [showSatellite, setShowSatellite] = useState(false);
   const [showRadar, setShowRadar] = useState(false);
+  const [showCurrents, setShowCurrents] = useState(true);
   const [radarTimestamp, setRadarTimestamp] = useState<number>(0);
   const [viewMode, setViewMode] = useState<'map' | 'info'>('map');
 
@@ -459,7 +517,7 @@ export default function MapScreen() {
     );
   }
 
-  const mapHTML = generateMapHTML(spots, ramps, channelMarkers, depthContours, reefs, userLocation, showSpots, showRamps, showMarkers, showDepth, showSeaMap, showSatellite, showReefs, showRadar, radarTimestamp);
+  const mapHTML = generateMapHTML(spots, ramps, channelMarkers, depthContours, reefs, userLocation, tidalFlow, showSpots, showRamps, showMarkers, showDepth, showSeaMap, showSatellite, showReefs, showRadar, radarTimestamp, showCurrents);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -586,6 +644,13 @@ export default function MapScreen() {
             >
               <Text style={styles.filterEmoji}>📏</Text>
               <Text style={[styles.filterPillText, { color: showDepth ? '#fff' : colors.text }]}>Depth</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.filterPill, { backgroundColor: showCurrents ? '#0891b2' : colors.card }]}
+              onPress={() => setShowCurrents(!showCurrents)}
+            >
+              <Text style={styles.filterEmoji}>🌊</Text>
+              <Text style={[styles.filterPillText, { color: showCurrents ? '#fff' : colors.text }]}>Current</Text>
             </Pressable>
           </ScrollView>
 
