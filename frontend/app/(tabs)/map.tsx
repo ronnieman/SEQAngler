@@ -126,7 +126,9 @@ const generateMapHTML = (
   showDepth: boolean,
   showSeaMap: boolean,
   showSatellite: boolean,
-  showReefs: boolean
+  showReefs: boolean,
+  showRadar: boolean,
+  radarTimestamp: number
 ) => {
   const spotsMarkersJS = showSpots ? spots.map(spot => `
     L.marker([${spot.latitude}, ${spot.longitude}], {
@@ -303,6 +305,31 @@ const generateMapHTML = (
         }).addTo(map);
         ` : ''}
 
+        // Weather Radar overlay from RainViewer
+        ${showRadar && radarTimestamp > 0 ? `
+        var radarLayer = L.tileLayer('https://tilecache.rainviewer.com/v2/radar/${radarTimestamp}/256/{z}/{x}/{y}/4/1_1.png', {
+          attribution: '© <a href="https://www.rainviewer.com">RainViewer</a>',
+          maxZoom: 18,
+          opacity: 0.7,
+          zIndex: 100
+        }).addTo(map);
+        
+        // Add radar legend
+        var radarLegend = L.control({position: 'bottomleft'});
+        radarLegend.onAdd = function(map) {
+          var div = L.DomUtil.create('div', 'radar-legend');
+          div.innerHTML = '<div style="background:rgba(255,255,255,0.9);padding:6px 10px;border-radius:6px;font-size:10px;box-shadow:0 2px 6px rgba(0,0,0,0.2);">' +
+            '<div style="font-weight:bold;margin-bottom:4px;">🌧️ Rain Intensity</div>' +
+            '<div style="display:flex;gap:3px;align-items:center;">' +
+            '<span style="background:#00ff00;width:12px;height:12px;border-radius:2px;"></span><span>Light</span>' +
+            '<span style="background:#ffff00;width:12px;height:12px;border-radius:2px;margin-left:4px;"></span><span>Moderate</span>' +
+            '<span style="background:#ff0000;width:12px;height:12px;border-radius:2px;margin-left:4px;"></span><span>Heavy</span>' +
+            '</div></div>';
+          return div;
+        };
+        radarLegend.addTo(map);
+        ` : ''}
+
         ${depthContoursJS}
         ${depthLabelsJS}
         ${reefsMarkersJS}
@@ -342,6 +369,8 @@ export default function MapScreen() {
   const [showSeaMap, setShowSeaMap] = useState(true);
   const [showReefs, setShowReefs] = useState(true);
   const [showSatellite, setShowSatellite] = useState(false);
+  const [showRadar, setShowRadar] = useState(false);
+  const [radarTimestamp, setRadarTimestamp] = useState<number>(0);
   const [viewMode, setViewMode] = useState<'map' | 'info'>('map');
 
   useEffect(() => {
@@ -371,6 +400,19 @@ export default function MapScreen() {
       setTidalFlow(flowRes.data);
       setSolunar(solunarRes.data);
       setTides(tidesRes.data);
+      
+      // Fetch radar timestamp from RainViewer API
+      try {
+        const radarRes = await axios.get('https://api.rainviewer.com/public/weather-maps.json');
+        if (radarRes.data?.radar?.past?.length > 0) {
+          const latestRadar = radarRes.data.radar.past[radarRes.data.radar.past.length - 1];
+          setRadarTimestamp(latestRadar.time);
+        }
+      } catch (radarError) {
+        console.log('Radar fetch error:', radarError);
+        // Use approximate current timestamp if API fails
+        setRadarTimestamp(Math.floor(Date.now() / 1000));
+      }
     } catch (error) {
       console.log('Error fetching data:', error);
     } finally {
@@ -417,7 +459,7 @@ export default function MapScreen() {
     );
   }
 
-  const mapHTML = generateMapHTML(spots, ramps, channelMarkers, depthContours, reefs, userLocation, showSpots, showRamps, showMarkers, showDepth, showSeaMap, showSatellite, showReefs);
+  const mapHTML = generateMapHTML(spots, ramps, channelMarkers, depthContours, reefs, userLocation, showSpots, showRamps, showMarkers, showDepth, showSeaMap, showSatellite, showReefs, showRadar, radarTimestamp);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -509,6 +551,13 @@ export default function MapScreen() {
             >
               <Text style={styles.filterEmoji}>🪸</Text>
               <Text style={[styles.filterPillText, { color: showReefs ? '#fff' : colors.text }]}>Reefs</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.filterPill, { backgroundColor: showRadar ? '#ef4444' : colors.card }]}
+              onPress={() => setShowRadar(!showRadar)}
+            >
+              <Text style={styles.filterEmoji}>🌧️</Text>
+              <Text style={[styles.filterPillText, { color: showRadar ? '#fff' : colors.text }]}>Radar</Text>
             </Pressable>
             <Pressable
               style={[styles.filterPill, { backgroundColor: showSpots ? colors.primary : colors.card }]}
