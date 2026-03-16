@@ -225,6 +225,20 @@ class ShipwreckData(BaseModel):
     fish_species: List[str]
     dive_accessible: bool
 
+class ReefData(BaseModel):
+    id: str
+    name: str
+    latitude: float
+    longitude: float
+    reef_type: str  # natural, artificial, coral, rocky
+    depth_min: float  # meters
+    depth_max: float  # meters
+    size_hectares: Optional[float] = None
+    fish_species: List[str]
+    description: str
+    best_fishing: str  # time/conditions
+    accessibility: str  # boat only, shore accessible, etc
+
 class SunMoonTimes(BaseModel):
     sunrise: str
     sunset: str
@@ -1727,6 +1741,191 @@ def get_default_channel_markers() -> List[ChannelMarker]:
             light_characteristics="Fl(2)5s",
             color="black_red_black",
             shape="pillar"
+        ),
+    ]
+
+# ============== REEFS ==============
+
+@api_router.get("/reefs", response_model=List[ReefData])
+async def get_reefs():
+    """Get reef locations in Moreton Bay and SEQ region"""
+    reefs = await db.reefs.find({}, {"_id": 0}).to_list(100)
+    if not reefs:
+        default_reefs = get_default_reefs()
+        await db.reefs.insert_many([r.model_dump() for r in default_reefs])
+        reefs = [r.model_dump() for r in default_reefs]
+    return reefs
+
+def get_default_reefs() -> List[ReefData]:
+    """Default reef data for Moreton Bay and SEQ coastal areas"""
+    return [
+        ReefData(
+            id="reef-1",
+            name="Flinders Reef",
+            latitude=-27.0167,
+            longitude=153.4833,
+            reef_type="coral",
+            depth_min=8,
+            depth_max=25,
+            size_hectares=150,
+            fish_species=["Coral Trout", "Maori Wrasse", "Tuskfish", "Spangled Emperor", "Cobia"],
+            description="One of the most southern coral reefs in the world. Marine sanctuary zone with exceptional biodiversity.",
+            best_fishing="Dawn and dusk during rising tides",
+            accessibility="Boat only - 40km offshore"
+        ),
+        ReefData(
+            id="reef-2",
+            name="Curtin Artificial Reef",
+            latitude=-27.3800,
+            longitude=153.2700,
+            reef_type="artificial",
+            depth_min=18,
+            depth_max=22,
+            size_hectares=5,
+            fish_species=["Snapper", "Pearl Perch", "Moses Perch", "Trevally", "Cobia"],
+            description="Deployed artificial reef structures attracting large schools of pelagic fish.",
+            best_fishing="Early morning, especially on run-out tides",
+            accessibility="Boat only - East of Moreton Island"
+        ),
+        ReefData(
+            id="reef-3",
+            name="Henderson Rock",
+            latitude=-27.1333,
+            longitude=153.4000,
+            reef_type="rocky",
+            depth_min=12,
+            depth_max=30,
+            size_hectares=20,
+            fish_species=["Snapper", "Jewfish", "Tuskfish", "Spanish Mackerel", "Cobia"],
+            description="Popular offshore fishing destination with rock pinnacles rising from sandy bottom.",
+            best_fishing="All tides, best during new moon periods",
+            accessibility="Boat only - 30km from Brisbane Bar"
+        ),
+        ReefData(
+            id="reef-4",
+            name="Hutchison Shoal",
+            latitude=-27.2500,
+            longitude=153.3667,
+            reef_type="rocky",
+            depth_min=15,
+            depth_max=28,
+            size_hectares=25,
+            fish_species=["Snapper", "Pearl Perch", "Amberjack", "Trevally", "Sweetlip"],
+            description="Extensive rocky reef system northeast of Moreton Island. Known for quality snapper.",
+            best_fishing="Run-out tides, particularly during winter",
+            accessibility="Boat only - 25km offshore"
+        ),
+        ReefData(
+            id="reef-5",
+            name="Peel Island Reef",
+            latitude=-27.5000,
+            longitude=153.3500,
+            reef_type="natural",
+            depth_min=3,
+            depth_max=12,
+            size_hectares=40,
+            fish_species=["Bream", "Whiting", "Flathead", "Squid", "Tailor"],
+            description="Fringing reef around Peel Island with excellent inshore fishing opportunities.",
+            best_fishing="High tide for bream, low tide for whiting",
+            accessibility="Boat - 15km from Manly"
+        ),
+        ReefData(
+            id="reef-6",
+            name="Myora Reef",
+            latitude=-27.4667,
+            longitude=153.4167,
+            reef_type="natural",
+            depth_min=2,
+            depth_max=8,
+            size_hectares=30,
+            fish_species=["Bream", "Dart", "Whiting", "Flathead", "Tailor"],
+            description="Shallow reef on western side of North Stradbroke Island. Wadeable at low tide.",
+            best_fishing="Incoming tide for bream and dart",
+            accessibility="Boat or kayak from Dunwich"
+        ),
+        ReefData(
+            id="reef-7",
+            name="Tangalooma Wrecks",
+            latitude=-27.1833,
+            longitude=153.3667,
+            reef_type="artificial",
+            depth_min=2,
+            depth_max=8,
+            size_hectares=2,
+            fish_species=["Bream", "Trevally", "Dart", "Flathead", "Squid"],
+            description="15 sunken vessels creating an artificial reef. Popular snorkeling and fishing spot.",
+            best_fishing="High tide, especially early morning",
+            accessibility="Boat or ferry from Brisbane"
+        ),
+        ReefData(
+            id="reef-8",
+            name="Mud Island Reef",
+            latitude=-27.3333,
+            longitude=153.2500,
+            reef_type="natural",
+            depth_min=1,
+            depth_max=6,
+            size_hectares=15,
+            fish_species=["Bream", "Whiting", "Flathead", "Dart", "Tailor"],
+            description="Shallow reef system around Mud Island. Excellent wade fishing at low tide.",
+            best_fishing="First two hours of incoming tide",
+            accessibility="Boat only - anchor and wade"
+        ),
+        ReefData(
+            id="reef-9",
+            name="Cape Moreton Lighthouse Reef",
+            latitude=-27.0333,
+            longitude=153.4667,
+            reef_type="rocky",
+            depth_min=5,
+            depth_max=20,
+            size_hectares=35,
+            fish_species=["Snapper", "Tailor", "Trevally", "Kingfish", "Cobia"],
+            description="Rocky reef structure at the northern tip of Moreton Island. Land-based and boat fishing.",
+            best_fishing="Dawn and dusk, run-out tides",
+            accessibility="4WD and walk, or boat"
+        ),
+        ReefData(
+            id="reef-10",
+            name="Amity Point Reef",
+            latitude=-27.4000,
+            longitude=153.4400,
+            reef_type="natural",
+            depth_min=2,
+            depth_max=10,
+            size_hectares=20,
+            fish_species=["Bream", "Whiting", "Flathead", "Squid", "Dart"],
+            description="Sheltered reef near Amity Point on North Stradbroke Island.",
+            best_fishing="High tide periods, calm weather",
+            accessibility="Ferry to Amity Point, then boat or kayak"
+        ),
+        ReefData(
+            id="reef-11",
+            name="Shag Rock",
+            latitude=-27.0833,
+            longitude=153.3833,
+            reef_type="rocky",
+            depth_min=10,
+            depth_max=35,
+            size_hectares=10,
+            fish_species=["Snapper", "Pearl Perch", "Cobia", "Spanish Mackerel", "Tuna"],
+            description="Offshore rocky pinnacle known for trophy snapper and pelagic species.",
+            best_fishing="Change of tide, particularly dawn",
+            accessibility="Boat only - experienced skippers"
+        ),
+        ReefData(
+            id="reef-12",
+            name="Coochiemudlo Island Reef",
+            latitude=-27.5667,
+            longitude=153.3333,
+            reef_type="natural",
+            depth_min=1,
+            depth_max=5,
+            size_hectares=12,
+            fish_species=["Bream", "Whiting", "Flathead", "Sand Crab", "Squid"],
+            description="Accessible reef around Coochiemudlo Island with family-friendly fishing.",
+            best_fishing="High tide for bream, low tide for whiting",
+            accessibility="Ferry from Victoria Point"
         ),
     ]
 

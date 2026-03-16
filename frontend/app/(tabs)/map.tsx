@@ -97,19 +97,36 @@ interface DepthContour {
   coordinates: number[][];
 }
 
+interface Reef {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  reef_type: string;
+  depth_min: number;
+  depth_max: number;
+  size_hectares?: number;
+  fish_species: string[];
+  description: string;
+  best_fishing: string;
+  accessibility: string;
+}
+
 // Generate map HTML with all features
 const generateMapHTML = (
   spots: FishingSpot[],
   ramps: BoatRamp[],
   markers: ChannelMarker[],
   depthContours: DepthContour[],
+  reefs: Reef[],
   userLocation: { latitude: number; longitude: number } | null,
   showSpots: boolean,
   showRamps: boolean,
   showMarkers: boolean,
   showDepth: boolean,
   showSeaMap: boolean,
-  showSatellite: boolean
+  showSatellite: boolean,
+  showReefs: boolean
 ) => {
   const spotsMarkersJS = showSpots ? spots.map(spot => `
     L.marker([${spot.latitude}, ${spot.longitude}], {
@@ -189,6 +206,27 @@ const generateMapHTML = (
   `;
   }).join('\n') : '';
 
+  // Reef markers with special styling based on type
+  const getReefColor = (type: string) => {
+    switch(type) {
+      case 'coral': return '#f472b6';     // Pink for coral
+      case 'artificial': return '#a855f7'; // Purple for artificial
+      case 'rocky': return '#78716c';      // Stone color for rocky
+      default: return '#14b8a6';           // Teal for natural
+    }
+  };
+
+  const reefsMarkersJS = showReefs ? reefs.map(reef => `
+    L.marker([${reef.latitude}, ${reef.longitude}], {
+      icon: L.divIcon({
+        className: 'reef-marker',
+        html: '<div style="background-color: ${getReefColor(reef.reef_type)}; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.35); font-size: 18px;">🪸</div>',
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+      })
+    }).addTo(map).bindPopup('<div style="min-width:200px"><b style="color:${getReefColor(reef.reef_type)};font-size:15px">🪸 ${reef.name}</b><br><span style="font-size:11px;color:#666;text-transform:capitalize">${reef.reef_type} Reef</span><br><span style="font-size:12px">📏 ${reef.depth_min}-${reef.depth_max}m depth</span><br><span style="font-size:11px;color:#0ea5e9">${reef.fish_species.slice(0, 3).join(", ")}</span><br><span style="font-size:10px;color:#666;font-style:italic">${reef.best_fishing}</span></div>');
+  `).join('\n') : '';
+
   const userLocationJS = userLocation ? `
     // Pulsing accuracy circle
     L.circle([${userLocation.latitude}, ${userLocation.longitude}], {
@@ -267,6 +305,7 @@ const generateMapHTML = (
 
         ${depthContoursJS}
         ${depthLabelsJS}
+        ${reefsMarkersJS}
         ${spotsMarkersJS}
         ${rampsMarkersJS}
         ${channelMarkersJS}
@@ -286,6 +325,7 @@ export default function MapScreen() {
   const [ramps, setRamps] = useState<BoatRamp[]>([]);
   const [channelMarkers, setChannelMarkers] = useState<ChannelMarker[]>([]);
   const [depthContours, setDepthContours] = useState<DepthContour[]>([]);
+  const [reefs, setReefs] = useState<Reef[]>([]);
   const [moonPhase, setMoonPhase] = useState<MoonPhase | null>(null);
   const [tidalFlow, setTidalFlow] = useState<TidalFlow | null>(null);
   const [solunar, setSolunar] = useState<Solunar | null>(null);
@@ -300,6 +340,7 @@ export default function MapScreen() {
   const [showMarkers, setShowMarkers] = useState(true);
   const [showDepth, setShowDepth] = useState(true);
   const [showSeaMap, setShowSeaMap] = useState(true);
+  const [showReefs, setShowReefs] = useState(true);
   const [showSatellite, setShowSatellite] = useState(false);
   const [viewMode, setViewMode] = useState<'map' | 'info'>('map');
 
@@ -310,11 +351,12 @@ export default function MapScreen() {
 
   const fetchAllData = async () => {
     try {
-      const [spotsRes, rampsRes, markersRes, depthRes, moonRes, flowRes, solunarRes, tidesRes] = await Promise.all([
+      const [spotsRes, rampsRes, markersRes, depthRes, reefsRes, moonRes, flowRes, solunarRes, tidesRes] = await Promise.all([
         axios.get(`${API_URL}/spots/depths`),
         axios.get(`${API_URL}/boat-ramps`),
         axios.get(`${API_URL}/channel-markers`),
         axios.get(`${API_URL}/bathymetry/contours`),
+        axios.get(`${API_URL}/reefs`),
         axios.get(`${API_URL}/moon-phase`),
         axios.get(`${API_URL}/tidal-flow`),
         axios.get(`${API_URL}/solunar`),
@@ -324,6 +366,7 @@ export default function MapScreen() {
       setRamps(rampsRes.data);
       setChannelMarkers(markersRes.data);
       setDepthContours(depthRes.data.contours || []);
+      setReefs(reefsRes.data);
       setMoonPhase(moonRes.data);
       setTidalFlow(flowRes.data);
       setSolunar(solunarRes.data);
@@ -374,7 +417,7 @@ export default function MapScreen() {
     );
   }
 
-  const mapHTML = generateMapHTML(spots, ramps, channelMarkers, depthContours, userLocation, showSpots, showRamps, showMarkers, showDepth, showSeaMap, showSatellite);
+  const mapHTML = generateMapHTML(spots, ramps, channelMarkers, depthContours, reefs, userLocation, showSpots, showRamps, showMarkers, showDepth, showSeaMap, showSatellite, showReefs);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -459,6 +502,13 @@ export default function MapScreen() {
             >
               <Text style={styles.filterEmoji}>⛵</Text>
               <Text style={[styles.filterPillText, { color: showSeaMap ? '#fff' : colors.text }]}>SeaMap</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.filterPill, { backgroundColor: showReefs ? '#f472b6' : colors.card }]}
+              onPress={() => setShowReefs(!showReefs)}
+            >
+              <Text style={styles.filterEmoji}>🪸</Text>
+              <Text style={[styles.filterPillText, { color: showReefs ? '#fff' : colors.text }]}>Reefs</Text>
             </Pressable>
             <Pressable
               style={[styles.filterPill, { backgroundColor: showSpots ? colors.primary : colors.card }]}
