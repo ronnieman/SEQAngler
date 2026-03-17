@@ -82,3 +82,7 @@ android-sdk/
 # Local environment overrides (keep .env files for deployment)
 .env.local
 .env.*.local
+-e 
+# Environment files
+*.env
+*.env.*
