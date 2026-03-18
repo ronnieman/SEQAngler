@@ -20,6 +20,9 @@
       }
     },
     "production": {
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://seq-angler.preview.emergentagent.com"
+      },
       "android": {
         "buildType": "app-bundle"
       },
