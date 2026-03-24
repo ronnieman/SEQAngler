@@ -1,5 +1,6 @@
 package com.seqangler.app.di
 
+import com.seqangler.app.BuildConfig
 import com.seqangler.app.data.api.SEQAnglerApi
 import dagger.Module
 import dagger.Provides
@@ -16,14 +17,17 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
     
-    // TODO: Change this to your backend URL
-    private const val BASE_URL = "https://your-backend-url.com/"
+    private const val BASE_URL = BuildConfig.API_BASE_URL
     
     @Provides
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
         
         return OkHttpClient.Builder()

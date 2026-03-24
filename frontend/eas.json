@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 5.0.0"
+    "version": ">= 16.0.0"
   },
   "build": {
     "development": {
@@ -20,6 +20,8 @@
       }
     },
     "production": {
+      "channel": "production",
+      "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_BACKEND_URL": "https://seq-angler.preview.emergentagent.com"
       },
@@ -34,7 +36,7 @@
   "submit": {
     "production": {
       "android": {
-        "serviceAccountKeyPath": "./google-services.json",
+        "serviceAccountKeyPath": "./play-service-account.json",
         "track": "internal"
       },
       "ios": {
