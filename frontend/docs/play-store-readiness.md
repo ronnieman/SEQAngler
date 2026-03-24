@@ -10,7 +10,11 @@ This project is configured for Android App Bundle (`.aab`) release builds via EA
   - `ACCESS_COARSE_LOCATION`
   - `ACCESS_FINE_LOCATION`
   - `CAMERA`
-- `com.google.android.gms.permission.AD_ID` is blocked to avoid unnecessary Ads Data declarations when ads are not used.
+- Explicitly blocked permissions keep the final manifest lean for policy review:
+  - `com.google.android.gms.permission.AD_ID`
+  - `android.permission.RECORD_AUDIO`
+  - `android.permission.READ_EXTERNAL_STORAGE`
+  - `android.permission.WRITE_EXTERNAL_STORAGE`
 
 ## 2) Play Console policy/data setup
 
