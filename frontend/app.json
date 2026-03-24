@@ -31,8 +31,8 @@
         "READ_MEDIA_IMAGES"
       ],
       "blockedPermissions": [
-        "READ_EXTERNAL_STORAGE",
-        "RECORD_AUDIO"
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
