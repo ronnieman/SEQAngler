@@ -8,25 +8,33 @@ plugins {
 
 android {
     namespace = "com.seqangler.app"
-    compileSdk = 34
+    compileSdk = 35
+
+    val mapsApiKey: String = (project.findProperty("MAPS_API_KEY") as String?) ?: ""
+    val backendBaseUrlRaw: String =
+        (project.findProperty("BACKEND_BASE_URL") as String?) ?: "https://seq-angler.preview.emergentagent.com/"
+    val backendBaseUrl = if (backendBaseUrlRaw.endsWith("/")) backendBaseUrlRaw else "$backendBaseUrlRaw/"
 
     defaultConfig {
         applicationId = "com.seqangler.app"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        targetSdk = 35
+        versionCode = 2
+        versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
+        manifestPlaceholders["mapsApiKey"] = mapsApiKey
+        buildConfigField("String", "BASE_URL", "\"$backendBaseUrl\"")
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -42,6 +50,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.5"

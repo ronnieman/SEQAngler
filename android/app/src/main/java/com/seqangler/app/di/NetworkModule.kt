@@ -1,5 +1,6 @@
 package com.seqangler.app.di
 
+import com.seqangler.app.BuildConfig
 import com.seqangler.app.data.api.SEQAnglerApi
 import dagger.Module
 import dagger.Provides
@@ -15,15 +16,16 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-    
-    // TODO: Change this to your backend URL
-    private const val BASE_URL = "https://your-backend-url.com/"
-    
+
     @Provides
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
         }
         
         return OkHttpClient.Builder()
@@ -38,7 +40,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BuildConfig.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
