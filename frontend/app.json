@@ -2,6 +2,7 @@
   "expo": {
     "name": "SEQ Angler",
     "slug": "seq-angler",
+    "description": "SEQ Angler helps fishers discover nearby spots, plan trips, and log catches.",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -24,11 +25,14 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.seqangler.app",
+      "versionCode": 1,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE"
+        "CAMERA"
+      ],
+      "blockedPermissions": [
+        "com.google.android.gms.permission.AD_ID"
       ]
     },
     "web": {
