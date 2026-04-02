@@ -3,6 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '../constants/Config';
 
+/** Stops sign-up/login from hanging forever if the server is slow or unreachable */
+const AUTH_REQUEST_TIMEOUT_MS = 20000;
+
 interface User {
   id: string;
   email: string;
@@ -74,6 +77,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const response = await axios.get(`${API_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${authToken}` },
+        timeout: AUTH_REQUEST_TIMEOUT_MS,
       });
       setUser(response.data);
       await AsyncStorage.setItem('auth_user', JSON.stringify(response.data));
@@ -88,6 +92,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const response = await axios.get(`${API_URL}/subscription/status`, {
         headers: { Authorization: `Bearer ${authToken}` },
+        timeout: AUTH_REQUEST_TIMEOUT_MS,
       });
       setSubscription(response.data);
     } catch (error) {
@@ -96,41 +101,43 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const login = async (email: string, password: string) => {
-    const response = await axios.post(`${API_URL}/auth/login`, {
-      email,
-      password,
-    });
-    
+    const response = await axios.post(
+      `${API_URL}/auth/login`,
+      { email, password },
+      { timeout: AUTH_REQUEST_TIMEOUT_MS }
+    );
+
     const { access_token, user: userData } = response.data;
-    
+
     setToken(access_token);
     setUser(userData);
-    
+
     await AsyncStorage.setItem('auth_token', access_token);
     await AsyncStorage.setItem('auth_user', JSON.stringify(userData));
-    
-    await fetchSubscription(access_token);
-    
+
+    // Do not block navigation on subscription; loads in background
+    void fetchSubscription(access_token);
+
     return response.data;
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const response = await axios.post(`${API_URL}/auth/register`, {
-      name,
-      email,
-      password,
-    });
-    
+    const response = await axios.post(
+      `${API_URL}/auth/register`,
+      { name, email, password },
+      { timeout: AUTH_REQUEST_TIMEOUT_MS }
+    );
+
     const { access_token, user: userData } = response.data;
-    
+
     setToken(access_token);
     setUser(userData);
-    
+
     await AsyncStorage.setItem('auth_token', access_token);
     await AsyncStorage.setItem('auth_user', JSON.stringify(userData));
-    
-    await fetchSubscription(access_token);
-    
+
+    void fetchSubscription(access_token);
+
     return response.data;
   };
 

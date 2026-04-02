@@ -1,12 +1,29 @@
+import { Platform } from 'react-native';
+
 // API Configuration
 const getApiUrl = () => {
   if (process.env.EXPO_PUBLIC_BACKEND_URL) {
     return `${process.env.EXPO_PUBLIC_BACKEND_URL}/api`;
   }
+  // Android emulator cannot reach host machine via localhost.
+  if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:8001/api';
+  }
   return 'http://localhost:8001/api';
 };
 
 export const API_URL = getApiUrl();
+
+// Legal
+const getPrivacyPolicyUrl = () => {
+  if (process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL) {
+    return process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL;
+  }
+  // Replace with your hosted privacy policy URL before Play submission.
+  return 'https://example.com/privacy';
+};
+
+export const PRIVACY_POLICY_URL = getPrivacyPolicyUrl();
 
 // App Colors
 export const Colors = {

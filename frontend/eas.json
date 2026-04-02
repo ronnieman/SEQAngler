@@ -21,7 +21,8 @@
     },
     "production": {
       "env": {
-        "EXPO_PUBLIC_BACKEND_URL": "https://seq-angler.preview.emergentagent.com"
+        "EXPO_PUBLIC_BACKEND_URL": "https://seq-angler.preview.emergentagent.com",
+        "EXPO_PUBLIC_PRIVACY_POLICY_URL": "https://docs.google.com/document/d/e/2PACX-1vSWisf2Xsu6BZNPnjwfrDBcceEWSLL0QZSAovmTMyJi6aOl9OlZdiPpyv_Ywu-nAFjTGKZOz2VRIO0a/pub"
       },
       "android": {
         "buildType": "app-bundle"
@@ -34,7 +35,7 @@
   "submit": {
     "production": {
       "android": {
-        "serviceAccountKeyPath": "./google-services.json",
+        "serviceAccountKeyPath": "./google-play-service-account.json",
         "track": "internal"
       },
       "ios": {

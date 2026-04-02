@@ -75,7 +75,16 @@ export default function RegisterScreen() {
       
     } catch (err: any) {
       console.log('Registration error:', err);
-      const message = err.response?.data?.detail || 'Unable to create account';
+      let message = 'Unable to create account';
+      if (err.code === 'ECONNABORTED' || err.message?.includes?.('timeout')) {
+        message =
+          'Request timed out. Check your connection and that the backend is running.';
+      } else if (err.response?.data?.detail) {
+        message = err.response.data.detail;
+      } else if (err.request && !err.response) {
+        message =
+          'Cannot reach server. Make sure backend is running and API URL is correct.';
+      }
       setError(message);
       if (Platform.OS !== 'web') {
         Alert.alert('Registration Failed', message);
@@ -204,6 +213,13 @@ export default function RegisterScreen() {
               <Text style={styles.registerButtonText}>Create Account</Text>
             )}
           </Pressable>
+          {loading ? (
+            <Text
+              style={[styles.loadingHint, { color: colors.textSecondary }]}
+            >
+              Creating account… (usually a few seconds)
+            </Text>
+          ) : null}
 
           {/* Login Link */}
           <View style={styles.loginRow}>
@@ -313,6 +329,11 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 18,
     fontWeight: '600',
+  },
+  loadingHint: {
+    textAlign: 'center',
+    fontSize: 13,
+    marginTop: 12,
   },
   loginRow: {
     flexDirection: 'row',

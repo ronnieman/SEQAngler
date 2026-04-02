@@ -7,10 +7,11 @@ import {
   TouchableOpacity,
   useColorScheme,
   Alert,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/Config';
+import { Colors, PRIVACY_POLICY_URL } from '../../constants/Config';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ProfileScreen() {
@@ -196,13 +197,39 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.menuItem}
+          style={[styles.menuItem, { borderBottomColor: colors.border }]}
           onPress={() => Alert.alert('Settings', 'Settings feature coming soon!')}
         >
           <Ionicons name="settings" size={22} color={colors.textSecondary} />
           <Text style={[styles.menuText, { color: colors.text }]}>Settings</Text>
           <Ionicons
             name="chevron-forward"
+            size={20}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.menuItem, { borderBottomWidth: 0 }]}
+          onPress={async () => {
+            try {
+              const canOpen = await Linking.canOpenURL(PRIVACY_POLICY_URL);
+              if (!canOpen) {
+                Alert.alert('Privacy Policy', 'Unable to open the privacy policy link.');
+                return;
+              }
+              await Linking.openURL(PRIVACY_POLICY_URL);
+            } catch {
+              Alert.alert('Privacy Policy', 'Unable to open the privacy policy link.');
+            }
+          }}
+        >
+          <Ionicons name="document-text-outline" size={22} color={colors.textSecondary} />
+          <Text style={[styles.menuText, { color: colors.text }]}>
+            Privacy Policy
+          </Text>
+          <Ionicons
+            name="open-outline"
             size={20}
             color={colors.textSecondary}
           />

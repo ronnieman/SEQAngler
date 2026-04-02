@@ -48,7 +48,11 @@ export default function LoginScreen() {
       router.replace('/(tabs)');
     } catch (err: any) {
       console.log('Login error:', err);
-      const message = err.response?.data?.detail || 'Invalid email or password';
+      const message =
+        err.response?.data?.detail ||
+        (err.request
+          ? 'Cannot reach server. Make sure backend is running and API URL is correct.'
+          : 'Invalid email or password');
       setError(message);
       if (Platform.OS !== 'web') {
         Alert.alert('Login Failed', message);

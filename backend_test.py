@@ -7,11 +7,14 @@ import requests
 import json
 import sys
 import traceback
+import os
 from datetime import datetime
 import base64
 
 # Backend URL from frontend .env
-BASE_URL = "https://seq-angler.preview.emergentagent.com/api"
+# Public preview host. This is mounted at `/docs` (not `/api/docs`),
+# so endpoints live at the site root (e.g., `/weather`, `/species`, `/auth/...`).
+BASE_URL = "https://seq-angler.preview.emergentagent.com"
 
 # Test data
 TEST_USER = {
@@ -38,7 +41,8 @@ def log_test(endpoint, method, success, status_code=None, response_data=None, er
         result["response_sample"] = str(response_data)[:200] + "..." if len(str(response_data)) > 200 else str(response_data)
     test_results.append(result)
     
-    status = "✅ PASS" if success else "❌ FAIL"
+    # Keep output ASCII-friendly for Windows console encodings.
+    status = "PASS" if success else "FAIL"
     print(f"{status} {method} {endpoint} - Status: {status_code}")
     if error_msg:
         print(f"    Error: {error_msg}")
@@ -524,13 +528,13 @@ def test_get_user_catches():
 
 def run_all_tests():
     """Run all backend API tests"""
-    print(f"\n🚀 Starting SEQ Angler Backend API Tests")
+    print(f"\nStarting SEQ Angler Backend API Tests")
     print(f"Backend URL: {BASE_URL}")
     print(f"Test started at: {datetime.now().isoformat()}")
     print("=" * 60)
     
     # Test public endpoints first
-    print("\n📋 Testing Public Endpoints...")
+    print("\nTesting Public Endpoints...")
     test_api_root()
     test_weather_api()
     test_marine_weather_api()
@@ -548,7 +552,7 @@ def run_all_tests():
     test_fishing_conditions_preview()
     
     # Test auth endpoints
-    print("\n🔐 Testing Authentication...")
+    print("\nTesting Authentication...")
     reg_success = test_user_registration()
     if not reg_success:
         # If registration fails, try login (user might exist)
@@ -560,15 +564,15 @@ def run_all_tests():
         test_get_current_user()
         
         # Test protected endpoints
-        print("\n🎣 Testing Protected Endpoints...")
+        print("\nTesting Protected Endpoints...")
         test_create_catch()
         test_get_user_catches()
     else:
-        print("❌ Cannot test protected endpoints - no auth token")
+        print("Cannot test protected endpoints - no auth token")
     
     # Print summary
     print("\n" + "=" * 60)
-    print("📊 TEST SUMMARY")
+    print("TEST SUMMARY")
     print("=" * 60)
     
     total_tests = len(test_results)
@@ -576,19 +580,20 @@ def run_all_tests():
     failed_tests = total_tests - passed_tests
     
     print(f"Total Tests: {total_tests}")
-    print(f"✅ Passed: {passed_tests}")
-    print(f"❌ Failed: {failed_tests}")
+    print(f"Passed: {passed_tests}")
+    print(f"Failed: {failed_tests}")
     print(f"Success Rate: {(passed_tests/total_tests)*100:.1f}%")
     
     # Show failed tests
     if failed_tests > 0:
-        print("\n❌ FAILED TESTS:")
+        print("\nFAILED TESTS:")
         for result in test_results:
             if not result["success"]:
                 print(f"  - {result['method']} {result['endpoint']}: {result.get('error', 'Unknown error')}")
     
     # Save detailed results
-    with open("/app/backend_test_results.json", "w") as f:
+    output_path = os.path.join(os.path.dirname(__file__), "backend_test_results.json")
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump({
             "summary": {
                 "total_tests": total_tests,
@@ -600,7 +605,7 @@ def run_all_tests():
             "test_timestamp": datetime.now().isoformat()
         }, f, indent=2)
     
-    print(f"\n📄 Detailed results saved to: /app/backend_test_results.json")
+    print(f"\nDetailed results saved to: {output_path}")
     return passed_tests == total_tests
 
 if __name__ == "__main__":
@@ -608,9 +613,9 @@ if __name__ == "__main__":
         success = run_all_tests()
         sys.exit(0 if success else 1)
     except KeyboardInterrupt:
-        print("\n⚠️  Test interrupted by user")
+        print("\nTest interrupted by user")
         sys.exit(1)
     except Exception as e:
-        print(f"\n💥 Test runner crashed: {e}")
+        print(f"\nTest runner crashed: {e}")
         traceback.print_exc()
         sys.exit(1)
